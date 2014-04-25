@@ -1,0 +1,11 @@
+Package: unbalanced
+Type: Package
+Title: The package implements different data-driven method for unbalanced datasets
+Version: 1.1
+Date: 2014-01-27
+Author: Andrea Dal Pozzolo, Olivier Caelen and Gianluca Bontempi
+Maintainer: Andrea Dal Pozzolo <adalpozz@ulb.ac.be>
+Description: A dataset is said to be unbalanced when the class of interest (minority class) is much rarer than normal behaviour (majority class). The cost of missing a minority class is typically much higher that missing a majority class. Most learning systems are not prepared to cope with unbalanced data. Proposed strategies essentially belong to the following categories: sampling and distance-based. Sampling techniques up-sample or down-sample a class of instances. SMOTE generates synthetic minority examples. Distance based techniques use distances between input points to under-sample or to remove noisy and borderline examples.
+License: GPL (>= 3)   
+URL: http://mlg.ulb.ac.be   
+Depends: FNN, RANN
