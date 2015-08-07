@@ -155,7 +155,7 @@ The race terminates with 5 candidates and the best method is oversampling.
 Please note that it is possible to change the type of statistical test used to remove candidates in the race with the argument **stat.test**.
 When we set **stat.test = "no"**, no statistical test is performed and the race terminates when all the folds of the cross validation are explored.
 
-## Conclusion
+## Summary
 
 With the **unbalanced** package we have made available some of the most well-known methods for unbalanced distribution. All these methods can be called from **ubBalance** that is a wrapper to the method-specific functions.
 Depending on the type of dataset, classification algorithm and accuracy measure adopted, we may have different strategies that return the best accuracy.
