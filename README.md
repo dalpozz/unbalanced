@@ -67,79 +67,6 @@ summary(underData$Class)
 ```
 
 Another well-know method for unbalanced distribution is SMOTE, which oversample the minority class by creating new synthetic observations.
-Let's compare the performances of two **{randomForest** classifiers, one trained on the original unbalanced dataset and a second trained on a dataset obtained after applying SMOTE.
-
-```s 
-set.seed(1234)
-
-#keep half for training and half for testing
-N <- nrow(ubIonosphere)
-N.tr <- floor(0.5*N)
-id.tr <- sample(1:N, N.tr)
-id.ts <- setdiff(1:N, id.tr)
-X.tr  <- input[id.tr, ]
-Y.tr <- output[id.tr]
-X.ts <- input[id.ts, ] 
-Y.ts <- output[id.ts]
-
-unbalTrain <- data.frame(X.tr, Class=Y.tr)
-summary(unbalTrain$Class)
-
-library(randomForest)
-#use the original unbalanced training set to build a model
-model1 <- randomForest(Class ~ ., unbalTrain)
-#predict on the testing set
-preds <- predict(model1, X.ts, type="class")
-#confusion matrix
-confusionMatrix1 <- table(prediction=preds, actual=Y.ts)
-print(confusionMatrix1)
-
-#rebalance the training set before building a model
-balanced <- ubBalance(X=X.tr, Y=Y.tr, type="ubSMOTE", percOver=200, percUnder=150)
-balTrain <- data.frame(balanced$X, Class=balanced$Y)
-summary(balTrain$Class)
-
-#use the balanced training set
-model2 <- randomForest(Class ~ ., balTrain)
-#predict on the testing set
-preds <- predict(model2, X.ts, type="class")
-confusionMatrix2 <- table(prediction=preds, actual=Y.ts)
-print(confusionMatrix2)
-#we can now correctly classify more minority class instances
-```
-
-Using SMOTE we alter the original class distribution and we are able to increase the number of minority instances correctly classified.
-After smoting the dataset we have fewer false negatives, but a larger number of false positives.
-In unbalanced classification, it often desired to correctly classify all minority instances (reducing the number of false negatives), because the cost of missing a positive instances (a false negative) is much higher than the cost of missing a negative instance (a false positive).
-
-```s 
-set.seed(1234)
-library(unbalanced)
-data(ubIonosphere)
-n <- ncol(ubIonosphere)
-output <- ubIonosphere[ ,n]
-input <- ubIonosphere[ ,-n]
-#apply oversampling
-data <- ubBalance(X=input, Y=output, type="ubOver", k=0)
-#oversampled dataset
-overData <- data.frame(data$X, Class=data$Y)
-#check the frequency of the target variable after oversampling
-summary(overData$Class)
-```
-
-In this case we replicate the minority class until we have as many positive as negative instances.
-Alternativelly, we can balance the dataset using undersampling (i.e. removing observations from the majority class):
-
-```s 
-#apply undersampling
-data <- ubBalance(X=input, Y=output, type="ubUnder", perc=50,  method="percPos")
-#undersampled dataset
-underData <- data.frame(data$X, Class=data$Y)
-#check the frequency of the target variable after oversampling
-summary(underData$Class)
-```
-
-Another well-know method for unbalanced distribution is SMOTE, which oversample the minority class by creating new synthetic observations.
 Let's compare the performances of two **randomForest** classifiers, one trained on the original unbalanced dataset and a second trained on a dataset obtained after applying SMOTE.
 
 ```s 
@@ -184,6 +111,7 @@ print(confusionMatrix2)
 Using SMOTE we alter the original class distribution and we are able to increase the number of minority instances correctly classified.
 After smoting the dataset we have fewer false negatives, but a larger number of false positives.
 In unbalanced classification, it often desired to correctly classify all minority instances (reducing the number of false negatives), because the cost of missing a positive instances (a false negative) is much higher than the cost of missing a negative instance (a false positive).
+
 
 ## Selecting the best methods
 
