@@ -5,7 +5,7 @@
 
 \description{One Side Selection is an undersampling method resulting from the application of Tomek links followed by the application of Condensed Nearest Neighbor.}
 
-\usage{ubOSS(X, Y, verbose = T)}
+\usage{ubOSS(X, Y, verbose = TRUE)}
 
 \arguments{
   \item{X}{the input variables of the unbalanced dataset.}
@@ -19,7 +19,7 @@
 \value{
   The function returns a list:
   \item{X}{input variables}
-  \item{Y}{response variables}
+  \item{Y}{response variable}
 }
 
 \references{M. Kubat, S. Matwin, et al. Addressing the curse of imbalanced training sets: one-sided selection. In MACHINE LEARNING-INTERNATIONAL WORKSHOP THEN CONFERENCE-, pages 179-186. MORGAN KAUFMANN PUBLISHERS, INC., 1997.}

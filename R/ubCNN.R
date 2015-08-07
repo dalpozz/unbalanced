@@ -1,5 +1,6 @@
 ubCNN <-
 function(X,Y,k=1,verbose=T){
+  #require(FNN)
   
   #only numeric features are allowed
   is.not.num<-which(sapply(X,is.numeric)==FALSE)
@@ -22,7 +23,9 @@ function(X,Y,k=1,verbose=T){
   C.X<-X[id.C,]
   C.Y<-Y[id.C]
   #use C to to build a 1-NN and classify all obs in S
-  Y.knn<-knn(C.X,S.X,C.Y,k)
+  Y.knn<-FNN::knn(C.X,S.X,C.Y,k)
+  levels(Y.knn) <- c(0, 1)
+  
   #move missclassified obs into C
   id.miss<-which(S.Y!=Y.knn)
   id.C<-c(id.C,id.miss)

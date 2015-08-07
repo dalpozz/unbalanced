@@ -1,9 +1,10 @@
 ubOSS <-
-function(X,Y,verbose=T){
+function(X, Y, verbose=TRUE){
+  
+  stopifnot(class(verbose) == "logical", all(unique(Y) %in% c(0, 1)))
   
   #only numeric features are allowed
-  is.not.num<-which(sapply(X,is.numeric)==FALSE)
-  if(length(is.not.num)>0)
+  if(any(sapply(X,is.numeric)==FALSE))
     stop("only numeric features are allowed to compute nearest neighbors")
   
   S.X<-X
@@ -22,7 +23,9 @@ function(X,Y,verbose=T){
   C.X<-X[id.C, ]
   C.Y<-Y[id.C]
   #use C to to build a 1-NN and classify all obs in S
-  Y.knn<-knn(C.X, S.X, C.Y, k = 1)
+  Y.knn<-FNN::knn(C.X, S.X, C.Y, k = 1)
+  levels(Y.knn) <- c(0, 1)
+  
   #move missclassified obs into C
   id.miss<-which(S.Y!=Y.knn)
   id.C<-c(id.C,id.miss)

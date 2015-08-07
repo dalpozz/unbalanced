@@ -1,9 +1,10 @@
 ubENN <-
-function(X,Y,k=3,verbose=TRUE){
+function(X,Y, k=3, verbose=TRUE){
+  
+  stopifnot(k > 0, class(verbose) == "logical", all(unique(Y) %in% c(0, 1)))
   
   #only numeric features are allowed
-  is.not.num<-which(sapply(X,is.numeric)==FALSE)
-  if(length(is.not.num)>0)
+  if(any(sapply(X,is.numeric)==FALSE))
     stop("only numeric features are allowed to compute nearest neighbors")
   
   i.1<-which(Y==1)
@@ -18,10 +19,11 @@ function(X,Y,k=3,verbose=TRUE){
   
   #removes only example from the majority class
   timeRemove<-system.time({
-    out.hat<-FNN::knn(train=X,test=X[i.0,], cl=Y, k=k+1,prob=TRUE) #the 1-nn is the point itself therefore we need k+1
-    proba.hat<-attr(out.hat, "prob")
-    levels(out.hat)<-c(0,1)
-    id.miss<-which((Y[i.0]!=out.hat) & (proba.hat>=0.75))
+    out.hat <- FNN::knn(train=X,test=X[i.0,], cl=Y, k=k+1,prob=TRUE) #the 1-nn is the point itself therefore we need k+1
+    proba.hat <- attr(out.hat, "prob")
+    levels(out.hat) <- c(0,1)
+    prob.th <- k/(k+1)
+    id.miss <- which((Y[i.0]!=out.hat) & (proba.hat>=prob.th))
   })	 
   if(verbose) 
     cat("Number of instances removed from majority class with ENN:",length(id.miss),

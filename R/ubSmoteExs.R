@@ -1,5 +1,5 @@
 ubSmoteExs <-
-function(data,tgt,N=200,k=5)
+function(data,tgt,N=200,k=5) {
   # INPUTS:
   # data are the rare cases (the minority "class" cases)
   # tgt is the name of the target variable
@@ -8,14 +8,22 @@ function(data,tgt,N=200,k=5)
   # OUTPUTS:
   # The result of the function is a (N/100)*T set of generated
   # examples with rare values on the target
-{
+
   nomatr <- c()
   T <- matrix(nrow=dim(data)[1],ncol=dim(data)[2]-1)
-  for(col in seq.int(dim(T)[2]))
-    if (class(data[,col]) %in% c('factor','character')) {
+  for(col in seq.int(dim(T)[2])){
+    cl <- class(data[,col])
+
+    if (cl %in% c('Date','POSIXct','POSIXt')) 
+      stop("cannot SMOTE variables of class Date, POSIXct or POSIXt")
+  
+    if (cl %in% c('factor','character')) {
       T[,col] <- as.integer(data[,col])
       nomatr <- c(nomatr,col)
-    } else T[,col] <- data[,col]
+    } else 
+      T[,col] <- data[,col]
+  }
+    
   
   if (N < 100) { # only a percentage of the T cases will be SMOTEd
     nT <- NROW(T)
@@ -37,7 +45,8 @@ function(data,tgt,N=200,k=5)
     
     # the k NNs of case T[i,]
     xd <- scale(T,T[i,],ranges)
-    for(a in nomatr) xd[,a] <- xd[,a]==0
+    for(a in nomatr) 
+      xd[,a] <- xd[,a]==0
     dd <- drop(xd^2 %*% rep(1, ncol(xd)))
     kNNs <- order(dd)[2:(k+1)]
     

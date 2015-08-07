@@ -20,7 +20,7 @@
 \value{
   The function returns a list:
   \item{X}{input variables}
-  \item{Y}{response variables}
+  \item{Y}{response variable}
 }
 \references{
 P. E. Hart. The condensed nearest neighbor rule. IEEE Transactions on Informa- tion Theory, 1968.

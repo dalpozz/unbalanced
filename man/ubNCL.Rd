@@ -23,7 +23,7 @@ Secondly, the neighbors of each positive examples are found and the ones belongi
 \value{
   The function returns a list:
   \item{X}{input variables}
-  \item{Y}{response variables}
+  \item{Y}{response variable}
 }
 
 \references{J. Laurikkala. Improving identification of difficult small classes by balancing class distribution. Artificial Intelligence in Medicine, pages 63-66, 2001.}

@@ -27,7 +27,7 @@ For percUnder, "perc"has to be (N.1/N.0 * 100) <=  perc <= 100, where N.1 is the
 \value{
 The function returns a list:
   \item{X}{input variables}
-  \item{Y}{response variables}
+  \item{Y}{response variable}
   \item{id.rm}{index of instances removed}
 }
 

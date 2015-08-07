@@ -1,16 +1,17 @@
 \name{ubBalance}
 \alias{ubBalance}
 
-\title{balance}
+\title{Balance wrapper}
 
-\description{The function implementes several techniques to re-balance or remove noisy instances in unbalanced datasets.}
+\description{The function implements several techniques to re-balance or remove noisy instances in unbalanced datasets.}
 
-\usage{ubBalance(X, Y, type = "ubSMOTE", positive = 1, percOver = 200, percUnder = 200, k = 5, perc = 50, method = "percPos", w = NULL, verbose = FALSE)}
+\usage{ubBalance(X, Y, type="ubSMOTE", positive=1, percOver=200, percUnder=200, 
+          k=5, perc=50, method="percPos", w=NULL, verbose=FALSE)}
 
 \arguments{
   \item{X}{the input variables of the unbalanced dataset.}
   \item{Y}{the response variable of the unbalanced dataset.}
-  \item{type}{the balancing technique to use ("ubOver", "ubUnder", "ubSMOTE", "ubOSS","ubCNN", "ubENN", "ubNCL", "ubTomek").}
+  \item{type}{the balancing technique to use (ubOver, ubUnder, ubSMOTE, ubOSS, ubCNN, ubENN, ubNCL, ubTomek).}
   \item{positive}{the majority class of the response variable.}
   \item{percOver}{parameter used in ubSMOTE}
   \item{percUnder}{parameter used in ubSMOTE}
@@ -27,15 +28,14 @@
 \value{
   The function returns a list:
   \item{X}{input variables}
-  \item{Y}{response variables}
+  \item{Y}{response variable}
   \item{id.rm}{index of instances removed if availble in the technique selected}
 }
-\references{
-Dal Pozzolo, Andrea, et al. "Racing for unbalanced methods selection." Intelligent Data Engineering and Automated Learning - IDEAL 2013. Springer Berlin Heidelberg, 2013. 24-31.}
+\references{Dal Pozzolo, Andrea, et al. "Racing for unbalanced methods selection." Intelligent Data Engineering and Automated Learning - IDEAL 2013. Springer Berlin Heidelberg, 2013. 24-31.}
 
 
 \seealso{
-\code{\link{ubOver}}, \code{\link{ubUnder}}, \code{\link{ubSMOTE}}, \code{\link{ubOSS}}, \code{\link{ubCNN}}, \code{\link{ubENN}}, \code{\link{ubNCL}}, \code{\link{ubTomek}}
+\code{\link{ubRacing}}, \code{\link{ubOver}}, \code{\link{ubUnder}}, \code{\link{ubSMOTE}}, \code{\link{ubOSS}}, \code{\link{ubCNN}}, \code{\link{ubENN}}, \code{\link{ubNCL}}, \code{\link{ubTomek}}
 }
 
 \examples{

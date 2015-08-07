@@ -21,7 +21,7 @@
 \value{
   The function returns a list:
   \item{X}{input variables}
-  \item{Y}{response variables}
+  \item{Y}{response variable}
   \item{id.rm}{index of instances removed}
 }
 

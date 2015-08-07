@@ -36,7 +36,7 @@ function(X, Y, perc = 50, method = "percPos", w = NULL) {
   i.0.rm <- setdiff(i.0, i.0.sub)  
   Id <- c(i.0.sub, i.1)
   Id <- sort(Id)
-
+  
   if (is.vector(X) != TRUE) 
     X <- X[Id, ] else X <- X[Id]
   Y <- Y[Id]

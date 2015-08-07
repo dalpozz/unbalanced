@@ -15,9 +15,7 @@ The Class variable orginally taking values bad and good has been transformed int
   A data frame with 351 observations on 33 independent variables (all numerical) and one last defining the class (1 or 0).
 }
 
-\source{
-	\url{cran.r-project.org/web/packages/mlbench/}
-	}
+\source{\url{http://cran.r-project.org/package=mlbench}}
 
 \examples{
 data(ubIonosphere)

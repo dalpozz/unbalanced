@@ -1,6 +1,6 @@
 # unbalanced
 
-The R package **unbalanced** implements several techniques to re-balance or remove noisy instances in unbalanced datasets.
+The R package **unbalanced** implements several techniques for unbalanced datasets.
 
 ## Installation
 

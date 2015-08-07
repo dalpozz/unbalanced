@@ -1,2 +1,2 @@
-import("RANN","FNN")
+import("RANN","FNN", "mlr", "foreach", "doParallel")
 exportPattern("^[[:alpha:]]+")

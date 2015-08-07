@@ -1,0 +1,309 @@
+\documentclass[nojss]{jss}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{natbib} 
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+
+%\VignetteEngine{knitr::knitr} 
+%\VignetteIndexEntry{Racing for unbalanced methods selection}
+
+%----------------------------------------------------------------------------------------
+%  TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\title{Racing for Unbalanced Methods Selection} 
+
+\author{Andrea~Dal Pozzolo, Olivier~Caelen, and~Gianluca~Bontempi}
+
+%\date{}
+
+\Abstract{
+State-of-the-art classification algorithms suffer when the data is skewed towards one class. 
+This led to the development of a number of techniques to cope with unbalanced data. 
+However, no technique appears to work consistently better in all conditions.
+This paper presents a new \proglang{R} package, called \pkg{unbalanced}, 
+which implements some well-known techniques for unbalanced classification tasks and 
+provides a racing strategy to adaptively select the best methods for a given dataset, 
+classification algorithms and accuracy measure adopted.
+}
+
+\Keywords{\proglang{R}, unbalanced classification, Racing}
+\Plainkeywords{R, unbalanced classification, Racing}
+
+\Address{
+  Andrea Dal Pozzolo, Gianluca Bontempi\\
+  Machine Learning Group (MLG),\\ 
+  Computer Science Department,\\ 
+  Faculty of Sciences ULB,\\
+  Universit\'e Libre de Bruxelles,\\ 
+  Brussels, Belgium\\
+  E-mail: \email{adalpozz@ulb.ac.be},  \email{gbonte@ulb.ac.be}\\\\
+  %URL: \url{http://www.ulb.ac.be/di/map/adalpozz}\\\\
+  
+  Olivier Caelen, \\
+  Fraud Risk Management Analytics, \\ 
+  Worldline S.A., \\
+  Brussels, Belgium \\
+  E-mail: \email{olivier.caelen@worldline.com}\\
+}
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Insert title
+
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+%\begin{multicols}{2} % Two-column layout throughout the main article text
+
+
+<<load_library, echo=FALSE, results='hide', message=FALSE, warning=FALSE, cache=FALSE>>=
+library(knitr)
+
+options(width=65)
+# Make output look like output, input like input
+opts_chunk$set(include=TRUE, tidy=FALSE, results='markup', message=FALSE, warning=FALSE, error=FALSE, out.width="\\textwidth", out.height="!")
+@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\tableofcontents
+\section{Introduction}
+
+Learning from unbalanced datasets is a difficult task since most classification algorithms are not designed to cope with a large difference between the number of cases belonging to different classes \cite{dal2013racing}. 
+The unbalanced nature of the data is typical of many applications such as medical diagnosis, text classification and oil spills detection.
+Credit card fraud detection~\cite{dal2014learned} is another well-known instance of highly unbalanced problem since (fortunately) the number of fraudulent transactions is typically much smaller than legitimate ones. 
+In literature several methods for dealing with unbalanced datasets have been proposed. 
+
+Since in real large variate tasks it is hard to know a priori the nature of the unbalanced tasks,
+the user is recommended to test all techniques with a consequent high computational cost. 
+Under different conditions, such as distinct datasets and algorithms, the best methods may change.
+In this context we propose a racing strategy~\cite{maron1993hoeffding} to automatically select the most adequate technique for a given dataset. The rationale of the racing strategy consists in testing in parallel a set of alternative balancing strategies on a subset of the dataset and to remove progressively the alternatives which are significantly worse.  
+
+By adopting a racing strategy we are able to select in an efficient manner either the best balancing method or a method which is not significantly different from the best one~\cite{dal2013racing}.
+Moreover, racing is able to reduce consistently the computation needed before finding the right methods for the dataset.
+
+%\clearpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methods for unbalanced classification}
+\label{sec:unbal}
+
+The \pkg{unbalanced} package implements some of the most well-known sampling and distance-based methods for unbalanced classification task. Within the family of sampling methods, we have functions for random undersampling (\code{ubUnder}) and oversampling (\code{ubOver}) \cite{drummond2003c4}.
+The package contains also a function called \code{ubSMOTE} that implements SMOTE~\cite{chawla2002smote}.
+Other distance-based methods available in \pkg{unbalanced} are OSS~\cite{kubat1997addressing} (\code{ubOSS}), 
+CNN~\cite{Hart68cnn} (\code{ubCNN}), ENN~\cite{wilson1972asymptotic} (\code{ubENN}), NCL~\cite{laurikkala2001improving} (\code{ubNCL}) and  Tomek Link~\cite{tomek1976two} (\code{ubTomek}).
+All these methods can be called by a wrapper function \code{ubBalance} that allows testing all these strategies by simpling changing the argument \code{type}.
+
+The package includes the \code{ubIonosphere} datasets, which is a modification of the Ionosphere dataset contained in \pkg{mlbench} package. 
+It has only numerical input variables, i.e. the first two variables are removed. 
+The \emph{Class} variable, originally taking values \emph{bad} and \emph{good}, has been transformed into a factor where 1 denotes the minority (bad) and 0 the majority class (good). This variable is our target and it is in the last column of the dataset.
+In the following we will also called the minority class as positive and the majority as negative.
+
+For example, let's apply oversampling to the Ionosphere dataset to have a balanced dataset.
+
+<<overIono, echo=TRUE, results='markup', cache=TRUE>>=
+library(unbalanced)
+data(ubIonosphere)
+n <- ncol(ubIonosphere)
+output <- ubIonosphere[ ,n]
+input <- ubIonosphere[ ,-n]
+
+set.seed(1234)
+#apply oversampling
+data <- ubBalance(X=input, Y=output, type="ubOver", k=0)
+#oversampled dataset
+overData <- data.frame(data$X, Class=data$Y)
+#check the frequency of the target variable after oversampling
+summary(overData$Class)
+@
+
+In this case we replicate the minority class until we have as many positive as negative instances.
+Alternativelly, we can balance the dataset using undersampling (i.e. removing observations from the majority class):
+
+<<underIono, echo=TRUE, results='markup', cache=TRUE>>=
+#apply undersampling
+data <- ubBalance(X=input, Y=output, type="ubUnder", perc=50,  method="percPos")
+#undersampled dataset
+underData <- data.frame(data$X, Class=data$Y)
+#check the frequency of the target variable after oversampling
+summary(underData$Class)
+@
+
+Another well-know method for unbalanced distribution is SMOTE, which oversample the minority class by creating new synthetic observations.
+Let's compare the performances of two \pkg{randomForest} classifiers, one trained on the original unbalanced dataset and a second trained on a dataset obtained after applying SMOTE.
+
+<<rf, echo=TRUE, cache=TRUE>>=
+set.seed(1234)
+
+#keep half for training and half for testing
+N <- nrow(ubIonosphere)
+N.tr <- floor(0.5*N)
+id.tr <- sample(1:N, N.tr)
+id.ts <- setdiff(1:N, id.tr)
+X.tr  <- input[id.tr, ]
+Y.tr <- output[id.tr]
+X.ts <- input[id.ts, ] 
+Y.ts <- output[id.ts]
+
+unbalTrain <- data.frame(X.tr, Class=Y.tr)
+summary(unbalTrain$Class)
+
+library(randomForest)
+#use the original unbalanced training set to build a model
+model1 <- randomForest(Class ~ ., unbalTrain)
+#predict on the testing set
+preds <- predict(model1, X.ts, type="class")
+confusionMatrix1 <- table(prediction=preds, actual=Y.ts)
+print(confusionMatrix1)
+
+#rebalance the training set before building a model
+balanced <- ubBalance(X=X.tr, Y=Y.tr, type="ubSMOTE", percOver=200, percUnder=150)
+balTrain <- data.frame(balanced$X, Class=balanced$Y)
+summary(balTrain$Class)
+
+#use the balanced training set
+model2 <- randomForest(Class ~ ., balTrain)
+#predict on the testing set
+preds <- predict(model2, X.ts, type="class")
+confusionMatrix2 <- table(prediction=preds, actual=Y.ts)
+print(confusionMatrix2)
+#we can now correctly classify more minority class instances
+@
+
+Using SMOTE we alter the original class distribution and we are able to increase the number of minority instances correctly classified.
+After smoting the dataset we have fewer false negatives, but a larger number of false positives.
+In unbalanced classification, it often desired to correctly classify all minority instances (reducing the number of false negatives), because the cost of missing a positive instances (a false negative) is much higher than the cost of missing a negative instance (a false positive).
+% In unbalanced classification, it is usually more costly to have a false negative (missing a minority instance) than a false positive (missing a positive).
+
+
+% <<auc, echo=TRUE, results='asis', cache=TRUE>>=
+% library(ROCR)
+% prob <- predict(model2, X.ts, type="prob")
+% phat <- prob[ ,'1']
+% pred.ROCR <- ROCR::prediction(phat, Y.ts)
+% AUC<- ROCR::performance(pred.ROCR,"auc")
+% AUC<- unlist(slot(AUC, "y.values"))
+% print(AUC)
+% @
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{Selecting the best methods}
+\section{Racing for strategy selection}
+\label{sec:race}
+
+The variety of approaches available in the \pkg{unbalanced} package allows the user to test multiple unbalanced methods.
+In a real situation where we have no prior information about the data distribution, it is difficult to decide which unbalanced strategy to use. 
+In this case testing all alternatives is not an option either because of the associated computational cost.
+%In this section we present a method for model selection which is able to dismiss bad strategy using a proportion of the data available. 
+
+A possible solution comes from the adoption of the Racing approach which was proposed in~\cite{maron1993hoeffding} to perform efficiently model selection in a learning task. 
+The principle of Racing consists in testing in parallel a set of alternatives and using a statistical test to determine if an alternative is significantly worse than the others. 
+In that case such alternative is discarded from the competition, and the computational effort is devoted to differentiate the remaining ones. 
+%Historically the first example of Racing method is called Hoeffding Race since it relies on the Hoeffding theorem to decide when a model is significantly worse than the others.
+The \textit{F-race} version was proposed in~\cite{birattari2002racing} and combines the Friedman test with Hoeffding Races \cite{maron1993hoeffding} to eliminate inferior candidates as soon as enough statistical evidence arises against them. In F-race, the Friedman test is used to check whether there is evidence that at least one of the candidates is significantly different from others and post-tests are applied to eliminate those candidates that are significantly worse than the best one.
+
+Here we adopt F-Race to search efficiently for the best strategy for unbalanced data. 
+The candidates are assessed on different subsets of data and, each time a new assessment is made, the Friedman test is used to dismiss significantly inferior candidates.
+We used a 10 fold cross validation to provide the assessment measure to the race. If a candidate is significantly better than all the others than the race is terminated without the need of using the whole dataset. In case there is not evidence of worse/better methods, the race terminates when the entire dataset is explored and the best candidate is the one with the best average result.
+F-Race is available in \pkg{unbalanced} with the \code{ubRacing} function and its implementation is a modification of the \code{race} function available in the \pkg{race} package. 
+The function \code{ubRacing} compares the 8 unbalanced methods (\code{ubUnder}, \code{ubOver}, \code{ubSMOTE}, \code{ubOSS}, \code{ubCNN}, \code{ubENN}, \code{ubNCL}, \code{ubTomek}) against the unbalanced distribution, so we have 9 candidates starting the race.
+
+% <<raceIono, echo=TRUE, cache=TRUE>>=
+% 
+% set.seed(1234)
+% 
+% #configuration of the sampling method used in the race
+% ubConf <- list(percOver=250, percUnder=150, k=3, perc=50, method="percPos", w=NULL)
+% 
+% # Race with 10 trees in the Random Forest to speed up results
+% results <- ubRacing(Class ~., ubIonosphere, "randomForest", positive=1, 
+%                     metric="f1", ubConf=ubConf, ntree=100)
+% 
+% # Race using 4 cores and 500 trees (default number of trees in randomForest)
+% # results <- ubRacing(Class ~., ubIonosphere, "randomForest", positive=1, 
+% #                     metric="auc", ubConf=ubConf, ncore=4)
+% 
+% # Let's try with a different algorithm (see mlr package for supported packages)
+% # library(e1071)
+% # results <- ubRacing(Class ~., ubIonosphere, "svm", positive=1, ubConf=ubConf)
+% # library(rpart)
+% # results <- ubRacing(Class ~., ubIonosphere, "rpart", positive=1, ubConf=ubConf)
+% @
+
+In the following we will use a highly unbalanced dataset containing credit card transactions used in \cite{dal2015Using} and available here:~\url{http://www.ulb.ac.be/di/map/adalpozz/data/creditcard.Rdata}.
+
+<<raceFraud, echo=TRUE, cache=TRUE>>=
+
+set.seed(1234)
+
+# load the dataset
+load(url("http://www.ulb.ac.be/di/map/adalpozz/data/creditcard.Rdata"))
+
+#configuration of the sampling method used in the race
+ubConf <- list(percOver=200, percUnder=200, 
+               k=2, perc=50, method="percPos", w=NULL)
+
+# Race with 10 trees in the Random Forest to speed up results
+results <- ubRacing(Class ~., creditcard, "randomForest", positive=1, 
+                    metric="auc", ubConf=ubConf, ntree=10)
+
+# Race using 4 cores and 500 trees (default number of trees in randomForest)
+# results <- ubRacing(Class ~., creditcard, "randomForest", positive=1, 
+#                     metric="auc", ubConf=ubConf, ncore=4)
+
+
+# Let's try with a different algorithm (see mlr package for supported packages)
+# library(e1071)
+# results <- ubRacing(Class ~., creditcard, "svm", positive=1, ubConf=ubConf)
+# library(rpart)
+# results <- ubRacing(Class ~., creditcard, "rpart", positive=1, ubConf=ubConf)
+@
+
+
+The best method according to the F-race is SMOTE. 
+Please note that it is possible to change the type of statistical test used to remove candidates in the race with the argument \code{stat.test}.
+When we set \code{stat.test = "no"}, no statistical test is performed and the race terminates when all the folds of the cross validation are explored.
+%We can also check which strategy is best according to the full cross validation by removing the Friedman test from the Race with the argument \code{stat.test = "no"}, but the computational cost is much higher.
+
+% <<fullcv, echo=TRUE, cache=TRUE>>=
+% 
+% # full CV
+% results <- ubRacing(Class ~., creditcard, "randomForest", positive=1, ubConf=ubConf, stat.test="no")
+% 
+% @
+
+
+
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[scale=0.43]{img/logo_mlg}
+% \caption{logomlg.}
+% \label{fig:logo_mlg}
+% \end{figure}
+
+\section{Conclusion}
+
+With the \pkg{unbalanced} package we have made available some of the most well-known methods for unbalanced distribution. All these methods can be called from \code{ubBalance} that is a wrapper to the method-specific functions.
+Depending on the type of dataset, classification algorithm and accuracy measure adopted, we may have different strategies that return the best accuracy.
+
+This consideration has lead us to adopt the F-race strategy where different candidates (unbalanced methods) are tested simultaneously. This algorithm is implemented in the \code{ubRacing} function which selects the best candidate without having to explore the whole dataset.
+
+
+%\bibliographystyle{abbrv}
+\bibliography{/Users/Andrea/Documents/Education/ULB/Phd/Papers/biblio}
+
+%\pagebreak
+%\printbibliography
+
+\end{document}

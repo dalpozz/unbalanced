@@ -13,8 +13,8 @@ function(X,Y,perc.over=200,k=5,perc.under=200,verbose=TRUE){
     # generate synthetic cases from these id.1
     newExs <- ubSmoteExs(data[id.1,],"Y",perc.over,k)   
   })
-  if(verbose)
-    cat("Time SMOTE:",round(as.numeric(time["elapsed"]),digits=2),"; perc.over",perc.over,"; perc.under",perc.under,"; k",k,"\n")
+#   if(verbose)
+#     cat("Time SMOTE:",round(as.numeric(time["elapsed"]),digits=2),"; perc.over",perc.over,"; perc.under",perc.under,"; k",k,"\n")
   
   row.has.na<-function(X)
     return(apply(X,1,function(x){any(is.na(x))}))
@@ -30,7 +30,7 @@ function(X,Y,perc.over=200,k=5,perc.under=200,verbose=TRUE){
   # get the undersample of the "majority class" examples
   selMaj <- sample((1:NROW(data))[-id.1],
                    as.integer((perc.under/100)*nrow(newExs)),
-                   replace=T)
+                   replace=TRUE)
   
   # the final data set (the undersample + the rare cases + the smoted exs)
   newdataset <- rbind(data[selMaj,],data[id.1,],newExs)

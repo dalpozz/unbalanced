@@ -1,9 +1,10 @@
 ubNCL <-
 function(X, Y, k = 3, verbose = TRUE) {
   
-  # only numeric features are allowed
-  is.not.num <- which(sapply(X, is.numeric) == FALSE)
-  if (length(is.not.num) > 0) 
+  stopifnot(k > 0, class(verbose) == "logical", all(unique(Y) %in% c(0, 1)))
+  
+  #only numeric features are allowed
+  if(any(sapply(X,is.numeric)==FALSE))
     stop("only numeric features are allowed to compute nearest neighbors")
   
   N.orig <- length(Y)
@@ -24,13 +25,14 @@ function(X, Y, k = 3, verbose = TRUE) {
     return(list(X = X, Y = Y))
   }
   
-  # If an instance belongs to the minority class and its three nearest neighbors
+  # If an instance belongs to the minority class and its nearest neighbors
   # misclasify it, then the nearest neighbors that belong to the majority class are removed.
   timeRemove <- system.time({
-    out.hat <- FNN::knn(train = X, test = X[i.1, ], cl = Y, k = k + 1, prob = T)
+    out.hat <- FNN::knn(train = X, test = X[i.1, ], cl = Y, k = k + 1, prob = TRUE)
     proba.hat <- attr(out.hat, "prob")
     levels(out.hat) <- c(0, 1)
-    id.miss <- which((Y[i.1] != out.hat) & (proba.hat >= 0.75))
+    prob.th <- k/(k+1)
+    id.miss <- which((Y[i.1] != out.hat) & (proba.hat >= prob.th))
     if (length(id.miss) == 0) {
       Id <- 1:N
       id2remove <- NULL
