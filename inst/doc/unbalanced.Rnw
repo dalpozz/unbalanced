@@ -96,10 +96,17 @@ Moreover, racing is able to reduce consistently the computation needed before fi
 \section{Methods for unbalanced classification}
 \label{sec:unbal}
 
-The \pkg{unbalanced} package implements some of the most well-known sampling and distance-based methods for unbalanced classification task. Within the family of sampling methods, we have functions for random undersampling (\code{ubUnder}) and oversampling (\code{ubOver}) \cite{drummond2003c4}.
-The package contains also a function called \code{ubSMOTE} that implements SMOTE~\cite{chawla2002smote}.
-Other distance-based methods available in \pkg{unbalanced} are OSS~\cite{kubat1997addressing} (\code{ubOSS}), 
-CNN~\cite{Hart68cnn} (\code{ubCNN}), ENN~\cite{wilson1972asymptotic} (\code{ubENN}), NCL~\cite{laurikkala2001improving} (\code{ubNCL}) and  Tomek Link~\cite{tomek1976two} (\code{ubTomek}).
+The \pkg{unbalanced} package implements some of the most well-known sampling and distance-based methods for unbalanced classification task. Within the family of sampling methods, we have functions for random undersampling (\code{ubUnder}) and oversampling (\code{ubOver}) \cite{drummond2003c4}. The former remove observations from the majority class while the latter replicate minority class instances.
+The package contains also a function called \code{ubSMOTE} that implements SMOTE~\cite{chawla2002smote}, which oversamples the minority class by generating synthetic minority examples in the neighborhood of observed ones.
+Other distance-based methods available in \pkg{unbalanced} are: \code{ubCNN}, \code{ubTomek}, \code{ubOSS}, \code{ubENN}, \code{ubNCL}.
+
+Condensed Nearest Neighbor (CNN)~\cite{Hart68cnn} (\code{ubCNN}) is used to select a subset of instances from the original unbalanced set which is consistent in the sense that it is correctly classified with the one-nearest neighbor rule.
+Tomek Link~\cite{tomek1976two} (\code{ubTomek}) removes observations from the negative class that are close to the positive region in order to return a dataset that presents a better separation between the two classes.
+One-sided Selection (OSS)~\cite{kubat1997addressing} (\code{ubOSS}) is an undersampling method resulting from the application of Tomek links followed by the application of CNN.
+Edited Nearest Neighbor (ENN)~\cite{wilson1972asymptotic} (\code{ubENN}) removes any example whose class label differs from the class of at least two of its three nearest neighbors. In this way majority examples that fall in the minority region and isolated minority examples are removed. 
+Neighborhood Cleaning Rule (NCL)~\cite{laurikkala2001improving} (\code{ubNCL}) modifies the ENN method by increasing the role of data cleaning. Firstly, NCL removes negatives examples which are misclassified by their 3-nearest neighbors. Secondly, the neighbors of each positive examples are found and the ones belonging to the majority class are removed.
+
+
 All these methods can be called by a wrapper function \code{ubBalance} that allows testing all these strategies by simpling changing the argument \code{type}.
 
 The package includes the \code{ubIonosphere} datasets, which is a modification of the Ionosphere dataset contained in \pkg{mlbench} package. 
@@ -110,13 +117,12 @@ In the following we will also called the minority class as positive and the majo
 For example, let's apply oversampling to the Ionosphere dataset to have a balanced dataset.
 
 <<overIono, echo=TRUE, results='markup', cache=TRUE>>=
+set.seed(1234)
 library(unbalanced)
 data(ubIonosphere)
 n <- ncol(ubIonosphere)
 output <- ubIonosphere[ ,n]
 input <- ubIonosphere[ ,-n]
-
-set.seed(1234)
 #apply oversampling
 data <- ubBalance(X=input, Y=output, type="ubOver", k=0)
 #oversampled dataset
@@ -161,6 +167,7 @@ library(randomForest)
 model1 <- randomForest(Class ~ ., unbalTrain)
 #predict on the testing set
 preds <- predict(model1, X.ts, type="class")
+#confusion matrix
 confusionMatrix1 <- table(prediction=preds, actual=Y.ts)
 print(confusionMatrix1)
 
@@ -219,56 +226,55 @@ We used a 10 fold cross validation to provide the assessment measure to the race
 F-Race is available in \pkg{unbalanced} with the \code{ubRacing} function and its implementation is a modification of the \code{race} function available in the \pkg{race} package. 
 The function \code{ubRacing} compares the 8 unbalanced methods (\code{ubUnder}, \code{ubOver}, \code{ubSMOTE}, \code{ubOSS}, \code{ubCNN}, \code{ubENN}, \code{ubNCL}, \code{ubTomek}) against the unbalanced distribution, so we have 9 candidates starting the race.
 
-% <<raceIono, echo=TRUE, cache=TRUE>>=
-% 
-% set.seed(1234)
-% 
-% #configuration of the sampling method used in the race
-% ubConf <- list(percOver=250, percUnder=150, k=3, perc=50, method="percPos", w=NULL)
-% 
-% # Race with 10 trees in the Random Forest to speed up results
-% results <- ubRacing(Class ~., ubIonosphere, "randomForest", positive=1, 
-%                     metric="f1", ubConf=ubConf, ntree=100)
-% 
-% # Race using 4 cores and 500 trees (default number of trees in randomForest)
-% # results <- ubRacing(Class ~., ubIonosphere, "randomForest", positive=1, 
-% #                     metric="auc", ubConf=ubConf, ncore=4)
-% 
-% # Let's try with a different algorithm (see mlr package for supported packages)
-% # library(e1071)
-% # results <- ubRacing(Class ~., ubIonosphere, "svm", positive=1, ubConf=ubConf)
-% # library(rpart)
-% # results <- ubRacing(Class ~., ubIonosphere, "rpart", positive=1, ubConf=ubConf)
-% @
+<<raceIono, echo=TRUE, cache=TRUE>>=
+set.seed(1234)
+#configuration of the sampling method used in the race
+ubConf <- list(percOver=250, percUnder=150, k=3, perc=50, method="percPos", w=NULL)
 
+# Race with 10 trees in the Random Forest to speed up results
+results <- ubRacing(Class ~., ubIonosphere, "randomForest", positive=1, 
+                    metric="auc", ubConf=ubConf, ntree=10)
+
+# Race using 4 cores and 500 trees (default number of trees in randomForest)
+# results <- ubRacing(Class ~., ubIonosphere, "randomForest", positive=1, 
+#                     metric="auc", ubConf=ubConf, ncore=4)
+
+# Let's try with a different algorithm (see mlr package for supported packages)
+# library(e1071)
+# results <- ubRacing(Class ~., ubIonosphere, "svm", positive=1, ubConf=ubConf)
+# library(rpart)
+# results <- ubRacing(Class ~., ubIonosphere, "rpart", positive=1, ubConf=ubConf)
+@
+
+The race terminates with 5 candidates and the best method is oversampling.
 In the following we will use a highly unbalanced dataset containing credit card transactions used in \cite{dal2015Using} and available here:~\url{http://www.ulb.ac.be/di/map/adalpozz/data/creditcard.Rdata}.
 
 <<raceFraud, echo=TRUE, cache=TRUE>>=
-
 set.seed(1234)
-
 # load the dataset
 load(url("http://www.ulb.ac.be/di/map/adalpozz/data/creditcard.Rdata"))
 
 #configuration of the sampling method used in the race
-ubConf <- list(percOver=200, percUnder=200, 
-               k=2, perc=50, method="percPos", w=NULL)
+ubConf <- list(percOver=200, percUnder=200, k=2, perc=50, method="percPos", w=NULL)
 
 # Race with 10 trees in the Random Forest to speed up results
 results <- ubRacing(Class ~., creditcard, "randomForest", positive=1, 
                     metric="auc", ubConf=ubConf, ntree=10)
-
-# Race using 4 cores and 500 trees (default number of trees in randomForest)
-# results <- ubRacing(Class ~., creditcard, "randomForest", positive=1, 
-#                     metric="auc", ubConf=ubConf, ncore=4)
-
-
-# Let's try with a different algorithm (see mlr package for supported packages)
-# library(e1071)
-# results <- ubRacing(Class ~., creditcard, "svm", positive=1, ubConf=ubConf)
-# library(rpart)
-# results <- ubRacing(Class ~., creditcard, "rpart", positive=1, ubConf=ubConf)
 @
+
+
+% <<raceFraudextra, echo=TRUE, cache=TRUE>>=
+% #Race using 4 cores and 500 trees (default number of trees in randomForest)
+% results <- ubRacing(Class ~., creditcard, "randomForest", positive=1, 
+%                     metric="auc", ubConf=ubConf, ncore=4)
+% 
+% 
+% #Let's try with a different algorithm (see mlr package for supported packages)
+% library(e1071)
+% results <- ubRacing(Class ~., creditcard, "svm", positive=1, ubConf=ubConf)
+% library(rpart)
+% results <- ubRacing(Class ~., creditcard, "rpart", positive=1, ubConf=ubConf)
+% @
 
 
 The best method according to the F-race is SMOTE. 
@@ -300,10 +306,101 @@ Depending on the type of dataset, classification algorithm and accuracy measure 
 This consideration has lead us to adopt the F-race strategy where different candidates (unbalanced methods) are tested simultaneously. This algorithm is implemented in the \code{ubRacing} function which selects the best candidate without having to explore the whole dataset.
 
 
-%\bibliographystyle{abbrv}
-\bibliography{/Users/Andrea/Documents/Education/ULB/Phd/Papers/biblio}
+\begin{thebibliography}{12}
+\newcommand{\enquote}[1]{``#1''}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+\providecommand{\eprint}[2][]{\url{#2}}
 
-%\pagebreak
-%\printbibliography
+\bibitem[{Birattari \emph{et~al.}(2002)Birattari, St{\"u}tzle, Paquete, and
+  Varrentrapp}]{birattari2002racing}
+Birattari M, St{\"u}tzle T, Paquete L, Varrentrapp K (2002).
+\newblock \enquote{A racing algorithm for configuring metaheuristics.}
+\newblock In \emph{Proceedings of the genetic and evolutionary computation
+  conference}, pp. 11--18.
+
+\bibitem[{Chawla \emph{et~al.}(2002)Chawla, Bowyer, Hall, and
+  Kegelmeyer}]{chawla2002smote}
+Chawla N, Bowyer K, Hall LO, Kegelmeyer WP (2002).
+\newblock \enquote{SMOTE: synthetic minority over-sampling technique.}
+\newblock \emph{Journal of Artificial Intelligence Research (JAIR)},
+  \textbf{16}, 321--357.
+
+\bibitem[{Dal~Pozzolo \emph{et~al.}(2015)Dal~Pozzolo, Caelen, Johnson, and
+  Bontempi}]{dal2015Using}
+Dal~Pozzolo A, Caelen O, Johnson R, Bontempi G (2015).
+\newblock \enquote{Using calibrated probability with undersampling.}
+\newblock In \emph{2015 IEEE Symposium on Computational Intelligence and Data
+  Mining}. IEEE.
+
+\bibitem[{Dal~Pozzolo \emph{et~al.}(2014)Dal~Pozzolo, Caelen, Le~Borgne,
+  Waterschoot, and Bontempi}]{dal2014learned}
+Dal~Pozzolo A, Caelen O, Le~Borgne YA, Waterschoot S, Bontempi G (2014).
+\newblock \enquote{Learned lessons in credit card fraud detection from a
+  practitioner perspective.}
+\newblock \emph{Expert Systems with Applications}, \textbf{41}(10), 4915--4928.
+
+\bibitem[{Dal~Pozzolo \emph{et~al.}(2013)Dal~Pozzolo, Caelen, Waterschoot, and
+  Bontempi}]{dal2013racing}
+Dal~Pozzolo A, Caelen O, Waterschoot S, Bontempi G (2013).
+\newblock \enquote{Racing for unbalanced methods selection.}
+\newblock In \emph{Proceedings of the 14th International Conference on
+  Intelligent Data Engineering and Automated Learning}. IDEAL.
+
+\bibitem[{Drummond and Holte(2003)}]{drummond2003c4}
+Drummond C, Holte R (2003).
+\newblock \enquote{C4.5, class imbalance, and cost sensitivity: why
+  under-sampling beats over-sampling.}
+\newblock In \emph{Workshop on Learning from Imbalanced Datasets II}. Citeseer.
+
+\bibitem[{Hart(1968)}]{Hart68cnn}
+Hart PE (1968).
+\newblock \enquote{The Condensed Nearest Neighbor Rule.}
+\newblock \emph{IEEE Transactions on Information Theory}.
+
+\bibitem[{Kubat \emph{et~al.}(1997)Kubat, Matwin
+  \emph{et~al.}}]{kubat1997addressing}
+Kubat M, Matwin S, \emph{et~al.} (1997).
+\newblock \enquote{Addressing the curse of imbalanced training sets: one-sided
+  selection.}
+\newblock In \emph{MACHINE LEARNING-INTERNATIONAL WORKSHOP THEN CONFERENCE-},
+  pp. 179--186. MORGAN KAUFMANN PUBLISHERS, INC.
+
+\bibitem[{Laurikkala(2001)}]{laurikkala2001improving}
+Laurikkala J (2001).
+\newblock \enquote{Improving identification of difficult small classes by
+  balancing class distribution.}
+\newblock \emph{Artificial Intelligence in Medicine}, pp. 63--66.
+
+\bibitem[{Maron and Moore(1993)}]{maron1993hoeffding}
+Maron O, Moore A (1993).
+\newblock \enquote{Hoeffding races: Accelerating model selection search for
+  classification and function approximation.}
+\newblock \emph{Robotics Institute}, p. 263.
+
+\bibitem[{Tomek(1976)}]{tomek1976two}
+Tomek I (1976).
+\newblock \enquote{Two modifications of CNN.}
+\newblock \emph{IEEE Trans. Syst. Man Cybern.}, \textbf{6}, 769--772.
+
+\bibitem[{Wilson(1972)}]{wilson1972asymptotic}
+Wilson D (1972).
+\newblock \enquote{Asymptotic properties of nearest neighbor rules using edited
+  data.}
+\newblock \emph{Systems, Man and Cybernetics}, (3), 408--421.
+
+\end{thebibliography}
+
+
+% %\bibliographystyle{abbrv}
+% \bibliography{/Users/Andrea/Documents/Education/ULB/Phd/Papers/biblio}
+% 
+% %\pagebreak
+% %\printbibliography
 
 \end{document}
