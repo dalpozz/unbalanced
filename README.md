@@ -16,6 +16,15 @@ You can install the stable version on
 install.packages('unbalanced', dependencies = TRUE)
 ```
 
+or then on available in github using:
+
+```{r}
+library(devtools)
+devtools::install_github("dalpozz/unbalanced")
+```
+
+
+
 
 ## Methods for unbalanced classification
 
