@@ -20,7 +20,7 @@ ubRacing(formula, data, algo, positive=1, ncore=1, nFold=10, maxFold=10, maxExp=
   \item{maxFold}{maximum number of folds to use in the Race}
   \item{maxExp}{maximum number of experiments to use in the Race}
   \item{stat.test}{statistical test to use to remove candidates which perform significantly worse than the best.}
-  \item{metric}{metric used to asses the classification.}
+  \item{metric}{metric used to asses the classification (f1, auc or gmean).}
   \item{ubConf}{configuration of the balancing techniques used in the Race.}
   \item{verbose}{print extra information (TRUE/FALSE)}
   \item{\dots}{additional arguments pass to train function in mlr package.}

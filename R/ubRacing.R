@@ -12,9 +12,45 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10,
   if(length(tgt) == 0)
     stop("target variable not defined")
   
-  
-  
-  
+  #Function used to make predictions with each candicate of the Race
+  predCandidate <- function(Xtr, Ytr, Xts, Yts, algo, balType, positive, ubConf, metric, verbose, ...){
+    
+    if (balType != "unbal"){
+      #re-balance the dataset
+      data <- ubBalance(Xtr, factor(Ytr), type=balType, positive=positive, 
+                        ubConf$percOver, ubConf$percUnder, ubConf$k, 
+                        ubConf$perc, ubConf$method, ubConf$w, verbose)
+      TR <- data.frame(data$X, Y=as.factor(data$Y)) 
+    } else {
+      #leave the dataset unbalance
+      Ytr <- factor(Ytr == positive, levels = c(FALSE, TRUE), labels = c(0, 1))
+      TR <- data.frame(Xtr, Y=Ytr) 
+    }
+    
+    Yts <- factor(Yts == positive, levels = c(FALSE, TRUE), labels = c(0, 1))
+    TS <- data.frame(Xts, Y=Yts) 
+    
+    #single prediction without parameter tuning
+    #library(mlr)
+    lrnTask <- makeClassifTask(id=paste(algo, balType, sep="_"), data=TR, target="Y", positive=positive)
+    lrnTask <- removeConstantFeatures(lrnTask, show.info=verbose)
+    L <- lrnTask$task.desc$class.levels
+    negative <- setdiff(L, positive)
+    if(length(L) > 2)
+      stop("only binary classification supported yet")
+    
+    race.lrn <- paste(lrnTask$task.desc$type, algo, sep=".")
+    lrn <- mlr::makeLearner(race.lrn, predict.type = "prob", ...)
+    mod <- mlr::train(lrn, lrnTask)  
+    pred <- predict(mod, newdata=TS)
+    
+    perf <- mlr::performance(pred, measures = list(gmean, f1, mlr::auc))
+    res.metric <- as.numeric(perf[metric])
+    #revert metric since racing is a minimizing algorithm
+    res <- 1 - res.metric
+    
+    res
+  }
   
   #test each methods on the same observations
   #return a vector of errors (1 or 0 for each method)
@@ -46,9 +82,6 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10,
     names(error) <- balanceTypes
     return(error)
   }
-  
-  
-  
   
   
   
@@ -369,81 +402,81 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10,
 
 
 
-#' Illustration of predCandidate function
-#'
-#' Function used to make predictions with each candicate of the Race in \code{\link{ubRacing}}
-#'
-#' @param Xtr input features of the training set.
-#' @param Ytr output feature of the training set. 
-#' @param Xts input features of the testing set. 
-#' @param Yts output feature of the testing set. 
-#' @param algo classification algorithm used to make predictions; see mlr package for supported algorithms.
-#' @param balType the type of balancing technique to use; see argument type in \code{\link{ubBalance}}.
-#' @param positive the majority class of the response variable.
-#' @param ubConf configuration of the balancing techniques used in the Race.
-#' @param metric metric used to asses the classification.
-#' @param verbose print extra information (TRUE/FALSE)
-#' @param ...  additional arguments pass to train function in mlr package.
-#'
-#' @return performance in terms of the metric selected
-#' 
-#' @seealso \code{\link{ubRacing}}
-#'
-#' @examples
-#' library(unbalanced)
-#' data(ubIonosphere)
-#' #make training and testing sets
-#' train <- ubIonosphere[1:200, ]
-#' Xtr <- subset(train, select=-Class)
-#' Ytr <- subset(train, select=Class, drop=TRUE)
-#' test <- ubIonosphere[201:351, ]
-#' Xts <- subset(test, select=-Class)
-#' Yts <- subset(test, select=Class, drop=TRUE)
-#' 
-#' #configure sampling parameters
-#' ubConf <- list(percOver=200, percUnder=200, k=2, perc=50, method="percPos", w=NULL)
-#' #load the classification algorithm that you intend to use inside the Race
-#' #see 'mlr' package for supported algorithms
-#' library(randomForest)
-#' #use only 5 trees
-#' predCandidate(Xtr, Ytr, Xts, Yts, "randomForest", "ubUnder", positive=1, ubConf=ubConf, metric="auc", verbose=TRUE, ntree=5)
-#'
-#' @export
-predCandidate <- function(Xtr, Ytr, Xts, Yts, algo, balType, positive, ubConf, metric, verbose, ...){
-  
-  if (balType != "unbal"){
-    #re-balance the dataset
-    data <- ubBalance(Xtr, factor(Ytr), type=balType, positive=positive, 
-                      ubConf$percOver, ubConf$percUnder, ubConf$k, 
-                      ubConf$perc, ubConf$method, ubConf$w, verbose)
-    TR <- data.frame(data$X, Y=as.factor(data$Y)) 
-  } else {
-    #leave the dataset unbalance
-    Ytr <- factor(Ytr == positive, levels = c(FALSE, TRUE), labels = c(0, 1))
-    TR <- data.frame(Xtr, Y=Ytr) 
-  }
-  
-  Yts <- factor(Yts == positive, levels = c(FALSE, TRUE), labels = c(0, 1))
-  TS <- data.frame(Xts, Y=Yts) 
-  
-  #single prediction without parameter tuning
-  #library(mlr)
-  lrnTask <- makeClassifTask(id=paste(algo, balType, sep="_"), data=TR, target="Y", positive=positive)
-  lrnTask <- removeConstantFeatures(lrnTask, show.info=verbose)
-  L <- lrnTask$task.desc$class.levels
-  negative <- setdiff(L, positive)
-  if(length(L) > 2)
-    stop("only binary classification supported yet")
-  
-  race.lrn <- paste(lrnTask$task.desc$type, algo, sep=".")
-  lrn <- makeLearner(race.lrn, predict.type = "prob", ...)
-  mod <- train(lrn, lrnTask)  
-  pred <- predict(mod, newdata=TS)
-  
-  perf <- mlr::performance(pred, measures = list(gmean, f1, mlr::auc))
-  res.metric <- as.numeric(perf[metric])
-  #revert metric since racing is a minimizing algorithm
-  res <- 1 - res.metric
-  
-  res
-}
+# #' Illustration of predCandidate function
+# #'
+# #' Function used to make predictions with each candicate of the Race in \code{\link{ubRacing}}
+# #'
+# #' @param Xtr input features of the training set.
+# #' @param Ytr output feature of the training set. 
+# #' @param Xts input features of the testing set. 
+# #' @param Yts output feature of the testing set. 
+# #' @param algo classification algorithm used to make predictions; see mlr package for supported algorithms.
+# #' @param balType the type of balancing technique to use; see argument type in \code{\link{ubBalance}}.
+# #' @param positive the majority class of the response variable.
+# #' @param ubConf configuration of the balancing techniques used in the Race.
+# #' @param metric metric used to asses the classification.
+# #' @param verbose print extra information (TRUE/FALSE)
+# #' @param ...  additional arguments pass to train function in mlr package.
+# #'
+# #' @return performance in terms of the metric selected
+# #' 
+# #' @seealso \code{\link{brocolors}}
+# #'
+# #' @examples
+# #' library(unbalanced)
+# #' data(ubIonosphere)
+# #' #make training and testing sets
+# #' train <- ubIonosphere[1:200, ]
+# #' Xtr <- subset(train, select=-Class)
+# #' Ytr <- subset(train, select=Class, drop=TRUE)
+# #' test <- ubIonosphere[201:351, ]
+# #' Xts <- subset(test, select=-Class)
+# #' Yts <- subset(test, select=Class, drop=TRUE)
+# #' 
+# #' #configure sampling parameters
+# #' ubConf <- list(percOver=200, percUnder=200, k=2, perc=50, method="percPos", w=NULL)
+# #' #load the classification algorithm that you intend to use inside the Race
+# #' #see 'mlr' package for supported algorithms
+# #' library(randomForest)
+# #' #use only 5 trees
+# #' predCandidate(Xtr, Ytr, Xts, Yts, "randomForest", "ubUnder", positive=1, ubConf=ubConf, metric="auc", verbose=TRUE, ntree=5)
+# #'
+# #' @export
+# predCandidate <- function(Xtr, Ytr, Xts, Yts, algo, balType, positive, ubConf, metric, verbose, ...){
+#   
+#   if (balType != "unbal"){
+#     #re-balance the dataset
+#     data <- ubBalance(Xtr, factor(Ytr), type=balType, positive=positive, 
+#                       ubConf$percOver, ubConf$percUnder, ubConf$k, 
+#                       ubConf$perc, ubConf$method, ubConf$w, verbose)
+#     TR <- data.frame(data$X, Y=as.factor(data$Y)) 
+#   } else {
+#     #leave the dataset unbalance
+#     Ytr <- factor(Ytr == positive, levels = c(FALSE, TRUE), labels = c(0, 1))
+#     TR <- data.frame(Xtr, Y=Ytr) 
+#   }
+#   
+#   Yts <- factor(Yts == positive, levels = c(FALSE, TRUE), labels = c(0, 1))
+#   TS <- data.frame(Xts, Y=Yts) 
+#   
+#   #single prediction without parameter tuning
+#   #library(mlr)
+#   lrnTask <- makeClassifTask(id=paste(algo, balType, sep="_"), data=TR, target="Y", positive=positive)
+#   lrnTask <- removeConstantFeatures(lrnTask, show.info=verbose)
+#   L <- lrnTask$task.desc$class.levels
+#   negative <- setdiff(L, positive)
+#   if(length(L) > 2)
+#     stop("only binary classification supported yet")
+#   
+#   race.lrn <- paste(lrnTask$task.desc$type, algo, sep=".")
+#   lrn <- makeLearner(race.lrn, predict.type = "prob", ...)
+#   mod <- train(lrn, lrnTask)  
+#   pred <- predict(mod, newdata=TS)
+#   
+#   perf <- mlr::performance(pred, measures = list(gmean, f1, mlr::auc))
+#   res.metric <- as.numeric(perf[metric])
+#   #revert metric since racing is a minimizing algorithm
+#   res <- 1 - res.metric
+#   
+#   res
+# }
