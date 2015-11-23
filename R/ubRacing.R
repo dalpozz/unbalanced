@@ -1,6 +1,6 @@
 ubRacing <-
-function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, 
-                     maxExp=100, stat.test="friedman", metric="f1", ubConf, verbose=FALSE, ...){
+function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxExp=100, 
+         stat.test="friedman", metric="f1", ubConf, threshold=NULL, verbose=FALSE, ...){
   
   stopifnot(class(formula)=="formula", NROW(data)>1, NCOL(data)>1, is.logical(verbose), ncore>0, nFold>1)
   metric <- match.arg(metric, c("f1","gmean", "auc"))
@@ -13,7 +13,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10,
     stop("target variable not defined")
   
   #Function used to make predictions with each candicate of the Race
-  predCandidate <- function(Xtr, Ytr, Xts, Yts, algo, balType, positive, ubConf, metric, verbose, ...){
+  predCandidate <- function(Xtr, Ytr, Xts, Yts, algo, balType, positive, ubConf, metric, threshold, verbose, ...){
     
     if (balType != "unbal"){
       #re-balance the dataset
@@ -44,6 +44,9 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10,
     mod <- mlr::train(lrn, lrnTask)  
     pred <- predict(mod, newdata=TS)
     
+    if(!is.null(threshold))
+      pred <- setThreshold(pred, threshold)
+    
     perf <- mlr::performance(pred, measures = list(gmean, f1, mlr::auc))
     res.metric <- as.numeric(perf[metric])
     #revert metric since racing is a minimizing algorithm
@@ -54,7 +57,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10,
   
   #test each methods on the same observations
   #return a vector of errors (1 or 0 for each method)
-  testCandidates <- function(Xtr, Xts, Ytr, Yts, algo, positive, balanceTypes, ubConf, metric, ncore, verbose, ...){
+  testCandidates <- function(Xtr, Xts, Ytr, Yts, algo, positive, balanceTypes, ubConf, metric, threshold, ncore, verbose, ...){
     nBalanceTypes <- length(balanceTypes)
     
     #library(doParallel)
@@ -71,7 +74,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10,
     error <- doParal( foreach(j=1:nBalanceTypes, .combine=c, .packages=c('mlr'), 
                               .export=c('predCandidate', 'ubBalance', 'ubUnder', 'ubCNN', 'ubENN', 
                                         'ubNCL', 'ubOSS', 'ubOver', 'ubSMOTE', 'ubSmoteExs', 'ubTomek')), 
-                      predCandidate(Xtr, Ytr, Xts, Yts, algo, balanceTypes[j], positive, ubConf, metric, verbose, ...))
+                      predCandidate(Xtr, Ytr, Xts, Yts, algo, balanceTypes[j], positive, ubConf, metric, threshold, verbose, ...))
     
     #       error <- NULL
     #       for(j in 1:nBalanceTypes) {  
@@ -317,7 +320,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10,
     if(any(is.na(types.alive)))
       stop("NAs in balanceTypes")
     
-    err <- testCandidates(Xtr, Xts, Ytr, Yts, algo, positive, types.alive, ubConf, metric, ncore, verbose, ...)
+    err <- testCandidates(Xtr, Xts, Ytr, Yts, algo, positive, types.alive, ubConf, metric, threshold, ncore, verbose, ...)
     Results[i, match(types.alive, balanceTypes)] <- err
     
     #the best candidate is the one that obtains the smallest results on the various tasks considered
