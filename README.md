@@ -16,7 +16,7 @@ You can install the stable version on
 install.packages('unbalanced', dependencies = TRUE)
 ```
 
-or then one available in github using:
+or the one available in github using:
 
 ```{r}
 library(devtools)
