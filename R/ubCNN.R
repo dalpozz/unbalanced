@@ -1,5 +1,4 @@
-ubCNN <-
-function(X,Y,k=1,verbose=T){
+ubCNN <- function(X,Y,k=1,verbose=T){
   #require(FNN)
   
   #only numeric features are allowed
@@ -25,6 +24,7 @@ function(X,Y,k=1,verbose=T){
   #use C to to build a 1-NN and classify all obs in S
   Y.knn<-FNN::knn(C.X,S.X,C.Y,k)
   levels(Y.knn) <- c(0, 1)
+  levels(S.Y) <- c(0, 1)
   
   #move missclassified obs into C
   id.miss<-which(S.Y!=Y.knn)
@@ -34,5 +34,6 @@ function(X,Y,k=1,verbose=T){
   Y<-Y[id.C]
   #now C is consistent with S
   
+
   return(list(X=X,Y=Y))
 }

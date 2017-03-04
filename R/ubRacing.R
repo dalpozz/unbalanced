@@ -2,7 +2,7 @@ ubRacing <-
 function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxExp=100, 
          stat.test="friedman", metric="f1", ubConf, threshold=NULL, verbose=FALSE, ...){
   
-  stopifnot(class(formula)=="formula", NROW(data)>1, NCOL(data)>1, is.logical(verbose), ncore>0, nFold>1)
+  stopifnot(class(formula)=="formula", is.data.frame(data), NROW(data)>1, NCOL(data)>1, is.logical(verbose), ncore>0, nFold>1)
   metric <- match.arg(metric, c("f1","gmean", "auc"))
   stat.test <- match.arg(stat.test, c("friedman","t.bonferroni", "t.holm", "t.none", "no"))
   stopifnot(class(ubConf)=="list", names(ubConf) %in% c("percOver", "percUnder", "k", "perc", "method", "w"))
@@ -22,7 +22,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxEx
                         ubConf$perc, ubConf$method, ubConf$w, verbose)
       TR <- data.frame(data$X, Y=as.factor(data$Y)) 
     } else {
-      #leave the dataset unbalance
+      #leave the dataset unbalanced
       Ytr <- factor(Ytr == positive, levels = c(FALSE, TRUE), labels = c(0, 1))
       TR <- data.frame(Xtr, Y=Ytr) 
     }
@@ -70,17 +70,20 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxEx
     j <- NULL 
     #We assume that a cluster is already registered!
     #library(foreach)
-    #make predictions
-    error <- doParal( foreach(j=1:nBalanceTypes, .combine=c, .packages=c('mlr'), 
-                              .export=c('predCandidate', 'ubBalance', 'ubUnder', 'ubCNN', 'ubENN', 
-                                        'ubNCL', 'ubOSS', 'ubOver', 'ubSMOTE', 'ubSmoteExs', 'ubTomek')), 
-                      predCandidate(Xtr, Ytr, Xts, Yts, algo, balanceTypes[j], positive, ubConf, metric, threshold, verbose, ...))
     
+    #make predictions
+    error <- doParal( foreach(j=1:nBalanceTypes, .combine=c, .packages=c('mlr'),
+                              .export=c('predCandidate', 'ubBalance', 'ubUnder', 'ubCNN', 'ubENN',
+                                        'ubNCL', 'ubOSS', 'ubOver', 'ubSMOTE', 'ubSmoteExs', 'ubTomek')),
+                      predCandidate(Xtr, Ytr, Xts, Yts, algo, balanceTypes[j], positive, ubConf, metric, threshold, verbose, ...))
+     
+    
+    # # to debug avoid using foreach
     #       error <- NULL
-    #       for(j in 1:nBalanceTypes) {  
-    #         error <- c(error, predCandidate(Xtr, Ytr, Xts, Yts, algo, balanceTypes[j], positive, ubConf, metric, verbose, ...))
+    #       for(j in 1:nBalanceTypes) {
+    #         error <- c(error, predCandidate(Xtr, Ytr, Xts, Yts, algo, balanceTypes[j], positive, ubConf, metric, threshold, verbose, ...))
     #       }
-    #     
+
     
     names(error) <- balanceTypes
     return(error)
