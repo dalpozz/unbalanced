@@ -15,7 +15,7 @@
 #'  \item{X}{input variables}
 #'  \item{Y}{response variable}
 #'
-#' @references D. Wilson. Asymptotic properties of nearest neighbor rules using edited data. Systems, Man and Cybernetics, IEEE Transactions on, 408-421, 1972.}
+#' @references D. Wilson. Asymptotic properties of nearest neighbor rules using edited data. Systems, Man and Cybernetics, IEEE Transactions on, 408-421, 1972.
 #'
 #' @examples
 #' library(unbalanced)
