@@ -1,3 +1,36 @@
+#' SMOTE
+#'
+#' Function that implements SMOTE (synthetic minority over-sampling technique)
+#' 
+#' @param X the input variables of the unbalanced dataset.
+#' @param Y the response variable of the unbalanced dataset. It must be a binary factor where the majority class is coded as 0 and the minority as 1.
+#' @param perc.over per.over/100 is the number of new instances generated for each rare instance. If perc.over < 100 a single instance is generated.
+#' @param k the number of neighbours to consider as the pool from where the new examples are generated
+#' @param perc.under perc.under/100 is the number of "normal" (majority class) instances that are randomly selected for each smoted observation.
+#' @param verbose print extra information (TRUE/FALSE).
+#' 
+#' 
+#' 
+#' @return The function returns a list: 
+#'  \item{X}{input variables}
+#'  \item{Y}{response variable}
+#'
+#'
+#' @references Chawla, Nitesh V., et al. "SMOTE: synthetic minority over-sampling technique." arXiv preprint arXiv:1106.1813 (2011).
+#' 
+#' @note Original code from DMwR package
+#' 
+#' @examples
+#' library(unbalanced)
+#' data(ubIonosphere)
+#' 
+#' n<-ncol(ubIonosphere)
+#' output<-ubIonosphere$Class
+#' input<-ubIonosphere[ ,-n]
+#' data<-ubSMOTE(X=input, Y=output)
+#' newData<-cbind(data$X, data$Y)
+#'
+#' @export
 ubSMOTE <-
 function(X,Y,perc.over=200,k=5,perc.under=200,verbose=TRUE){
   

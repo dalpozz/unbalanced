@@ -1,3 +1,34 @@
+#' Tomek Link
+#'
+#' The function finds the points in the dataset that are tomek link using 1-NN and then removes only majority class instances that are tomek links.
+#' 
+#' @param X the input variables of the unbalanced dataset.
+#' @param Y the response variable of the unbalanced dataset. It must be a binary factor where the majority class is coded as 0 and the minority as 1.
+#' @param verbose print extra information (TRUE/FALSE).
+#' 
+#'
+#' @details In order to compute nearest neighbors, only numeric features are allowed.
+#' 
+#' 
+#' @return The function returns a list: 
+#'  \item{X}{input variables}
+#'  \item{Y}{response variable}
+#'  \item{id.rm}{index of instances removed}
+#'
+#'
+#' @references I. Tomek. Two modifications of cnn. IEEE Trans. Syst. Man Cybern., 6:769-772, 1976.
+#'  
+#' @examples
+#' library(unbalanced)
+#' data(ubIonosphere)
+#' 
+#' n<-ncol(ubIonosphere)
+#' output<-ubIonosphere$Class
+#' input<-ubIonosphere[ ,-n]
+#' data<-ubTomek(X=input, Y=output)
+#' newData<-cbind(data$X, data$Y)
+#'
+#' @export
 ubTomek <-
 function(X, Y, verbose=TRUE){
   

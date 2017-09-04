@@ -1,3 +1,33 @@
+#' Over-sampling
+#'
+#' The function replicates randomly some instances from the minority class in order to obtain a final dataset with the same number of instances from the two classes.
+#' 
+#' @param X the input variables of the unbalanced dataset.
+#' @param Y the response variable of the unbalanced dataset. It must be a binary factor where the majority class is coded as 0 and the minority as 1.
+#' @param k defines the sampling method.
+#' @param verbose print extra information (TRUE/FALSE)
+#'
+#'
+#' @details If K=0: sample with replacement from the minority class until we have the same number of instances in each class.
+#' If K>0: sample with replacement from the minority class until we have k-times the orginal number of minority instances.
+#'
+#'
+#' @return The function returns a list: 
+#'  \item{X}{input variables}
+#'  \item{Y}{response variable}
+#'
+#'
+#' @examples
+#' library(unbalanced)
+#' data(ubIonosphere)
+#' 
+#' n<-ncol(ubIonosphere)
+#' output<-ubIonosphere$Class
+#' input<-ubIonosphere[ ,-n]
+#' data<-ubOver(X=input, Y=output)
+#' newData<-cbind(data$X, data$Y)
+#'
+#' @export
 ubOver <-
 function(X, Y, k = 0, verbose=TRUE) {
   

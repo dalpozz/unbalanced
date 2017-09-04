@@ -1,3 +1,17 @@
+#' ubSmoteExs
+#'
+#' Function used in SMOTE to generate new minority examples.
+#' 
+#' @param data the data.frame
+#' @param tgt the index of the target/response variables
+#' @param N N/100 is the number of new instances generated for each rare instance. If N < 100 a single instance is generated.
+#' @param k the number of neighbours to consider as the pool from where the new examples are generated.
+#' 
+#' @return newCases
+#' @details This function does not handle vectors.
+#' @seealso \code{\link{ubSMOTE}}
+#'
+#' @export
 ubSmoteExs <-
 function(data,tgt,N=200,k=5) {
   # INPUTS:
