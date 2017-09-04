@@ -88,18 +88,25 @@ function(X, Y, type = "ubSMOTE", positive = 1,
   
   if (type == "ubOver")
     data <- ubOver(X, Y, k, verbose)
+  
   if (type == "ubUnder")
     data <- ubUnder(X, Y, perc, method, w)
+  
   if (type == "ubSMOTE")
     data <- ubSMOTE(X, Y, percOver, k, percUnder, verbose)
+  
   if (type == "ubOSS")
     data <- ubOSS(X, Y, verbose)
+  
   if (type == "ubCNN")
     data <- ubCNN(X, Y, k, verbose)
+  
   if (type == "ubENN")
     data <- ubENN(X, Y, k, verbose)
+  
   if (type == "ubNCL")
     data <- ubNCL(X, Y, k, verbose)
+  
   if (type == "ubTomek")
     data <- ubTomek(X, Y, verbose)
   
