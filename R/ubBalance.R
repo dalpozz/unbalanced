@@ -29,14 +29,14 @@
 #' @references Dal Pozzolo, Andrea, et al. "Racing for unbalanced methods selection." Intelligent Data Engineering and Automated Learning - IDEAL 2013. Springer Berlin Heidelberg, 2013. 24-31.
 #'
 #' @examples
-#' # use Racing to select the best technique for an unbalanced dataset
 #' library(unbalanced)
 #' data(ubIonosphere)
 #' 
 #' n<-ncol(ubIonosphere)
 #' output<-ubIonosphere$Class
 #' input<-ubIonosphere[ ,-n]
-#' # balance the dataset
+#' 
+#' # balance the dataset using SMOTE
 #' data<-ubBalance(X= input, Y=output, type="ubSMOTE", percOver=300, percUnder=150, verbose=TRUE)
 #' balancedData<-cbind(data$X,data$Y)
 #'
