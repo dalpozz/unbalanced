@@ -101,7 +101,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxEx
     race.lrn <- paste(lrnTask$task.desc$type, algo, sep=".")
     lrn <- mlr::makeLearner(race.lrn, predict.type = "prob", ...)
     mod <- mlr::train(lrn, lrnTask)  
-    pred <- predict(mod, newdata=TS)
+    pred <- stats::predict(mod, newdata=TS)
     
     if(!is.null(threshold))
       pred <- setThreshold(pred, threshold)
@@ -164,11 +164,11 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxEx
                                                          u^3 - u
                                                        })))/(k - 1))))
     PARAMETER <- k - 1
-    PVAL <- pchisq(STATISTIC, PARAMETER, lower.tail = FALSE)
+    PVAL <- stats::pchisq(STATISTIC, PARAMETER, lower.tail = FALSE)
     if (!is.nan(PVAL) && (PVAL < alpha)) {
       if (interactive) 
         cat("|-|")
-      t <- qt(1 - alpha/2, (n - 1) * (k - 1)) * (2 * (n * 
+      t <- stats::qt(1 - alpha/2, (n - 1) * (k - 1)) * (2 * (n * 
                                                         A - sum(R^2))/((n - 1) * (k - 1)))^(1/2)
       o <- order(R)
       J <- I[o[1]]
@@ -191,7 +191,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxEx
     if (no.alive == 2) {
       V1 <- Results[1:(no.subtasks.sofar), which.alive[1]]
       V2 <- Results[1:(no.subtasks.sofar), which.alive[2]]
-      PVAL <- wilcox.test(V1, V2, paired = TRUE, exact = FALSE)$p.value
+      PVAL <- stats::wilcox.test(V1, V2, paired = TRUE, exact = FALSE)$p.value
       D <- V1 - V2
       w.stat <- sum(sign(D) * rank(abs(D)))
       if (!is.nan(PVAL) && !is.na(PVAL) && (PVAL < 1 - conf.level)) {
@@ -240,12 +240,12 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxEx
     for (j in which.alive) {
       Vb <- Results[1:no.subtasks.sofar, best]
       Vj <- Results[1:no.subtasks.sofar, j]
-      p <- t.test(Vb, Vj, paired = TRUE)$p.value
+      p <- stats::t.test(Vb, Vj, paired = TRUE)$p.value
       if (!is.nan(p) & !is.na(p)) 
         PJ <- array(c(PJ, j, p), dim = dim(PJ) + c(0, 
                                                    1))
     }
-    PJ[2, ] <- p.adjust(PJ[2, ], method = adjust)
+    PJ[2, ] <- stats::p.adjust(PJ[2, ], method = adjust)
     dropped.any <- FALSE
     for (j in 1:ncol(PJ)) if (PJ[2, j] < (1 - conf.level)) {
       alive[PJ[1, j]]<- FALSE
@@ -291,7 +291,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxEx
         cuts <- 2
       if (cuts > 5) 
         cuts <- 5
-      y <- cut(y, unique(quantile(y, probs = seq(0, 1, length = cuts))), include.lowest = TRUE)
+      y <- cut(y, unique(stats::quantile(y, probs = seq(0, 1, length = cuts))), include.lowest = TRUE)
     }
     if (k < length(y)) {
       y <- factor(as.character(y))
@@ -445,7 +445,7 @@ function(formula, data, algo, positive=1, ncore = 1, nFold=10, maxFold=10, maxEx
   
   if(max.tasks>1){
     avg.err <- apply(Results, 2, mean, na.rm=TRUE)
-    sd.err <- apply(Results, 2, sd, na.rm=TRUE)
+    sd.err <- apply(Results, 2, stats::sd, na.rm=TRUE)
   }
   else {	#max.tasks==1
     avg.err <- Results
