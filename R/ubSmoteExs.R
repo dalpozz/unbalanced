@@ -72,9 +72,9 @@ function(data,tgt,N=200,k=5) {
       
       # the attribute values of the generated case
       difs <- T[kNNs[neig],]-T[i,]
-      new[(i-1)*nexs+n,] <- T[i,]+runif(1)*difs
+      new[(i-1)*nexs+n,] <- T[i,]+stats::runif(1)*difs
       for(a in nomatr)
-        new[(i-1)*nexs+n,a] <- c(T[kNNs[neig],a],T[i,a])[1+round(runif(1),0)]
+        new[(i-1)*nexs+n,a] <- c(T[kNNs[neig],a],T[i,a])[1+round(stats::runif(1),0)]
       
     }
   }
